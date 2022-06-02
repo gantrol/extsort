@@ -18,6 +18,7 @@ import static org.junit.Assert.*;
 public class ExternalSortTest {
 
     private static final String TEST_FILE1_TXT = "test-file-1.txt";
+    private static final String TEST_FILE1_OUTPUT_TXT = "test-file-1_sorted.txt";
     private static final String TEST_FILE2_TXT = "test-file-2.txt";
 
     private static final Integer[] EXPECTED_SORT_RESULTS = {
@@ -55,10 +56,14 @@ public class ExternalSortTest {
         this.fileList = new ArrayList<>(2);
         this.file1 = new File(this.getClass().getClassLoader()
                 .getResource(TEST_FILE1_TXT).toURI());
+        this.file2 = new File(this.getClass().getClassLoader()
+                .getResource(TEST_FILE2_TXT).toURI());
 
         File tmpFile1 = new File(this.file1.getPath() + ".tmp");
+        File tmpFile2 = new File(this.file2.getPath() + ".tmp");
 
         copyFile(this.file1, tmpFile1);
+        copyFile(this.file2, tmpFile2);
         this.fileList.add(tmpFile1);
     }
 
@@ -114,4 +119,38 @@ public class ExternalSortTest {
         }
         assertArrayEquals(Arrays.toString(result.toArray()), EXPECTED_SORT_RESULTS, result.toArray());
     }
+
+    @Test
+    public void testSortFile1() throws IOException {
+
+        File tmpFile1 = fileList.get(0);
+        ExternalSort externalSort = new ExternalSort();
+        File output = new File(TEST_FILE1_OUTPUT_TXT);
+        externalSort.externalSort(tmpFile1, null, output);
+        // TODO: check lines...
+        // test file content sorted
+        assertTrue(isFileSorted(output));
+        output.delete();
+
+    }
+
+    private boolean isFileSorted(File file) throws IOException {
+        // TODO: read and keep pre int
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line = br.readLine();
+        if (line != null) {
+            int pre = Integer.parseInt(line);
+            while ((line = br.readLine()) != null) {
+                int cur = Integer.parseInt(line);
+                if (pre > cur) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // TODO: test merge file1 and file2
+
+    // TODO: large file and test result order
 }

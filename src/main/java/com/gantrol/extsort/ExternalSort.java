@@ -40,10 +40,14 @@ public class ExternalSort {
             String inputFile = args[0];
             String outputFile = args[1];
 
-            List<File> l = externalSort.sortInBatch(new File(inputFile), tempFileStore);
-            long linesOfNumbers = externalSort.mergeSortedFiles(l, new File(outputFile), false);
+            long linesOfNumbers = externalSort.externalSort(new File(inputFile), tempFileStore, new File(outputFile));
             System.out.println("为" + linesOfNumbers + "行排序");
         }
+    }
+
+    public long externalSort(File file, File tmpDir, File outputFile) throws IOException {
+        List<File> l = sortInBatch(file, tmpDir);
+        return mergeSortedFiles(l, outputFile, false);
     }
 
     public List<File> sortInBatch(File file, File tmpDir)
@@ -55,16 +59,19 @@ public class ExternalSort {
         List<File> files = new ArrayList<>();
         long blockSize = Utils.estimateBestSizeOfBlocks(dataLength, maxTempFiles, availableMemory);
 
-        try (DataInputStream dataInputStream = new DataInputStream(new FileInputStream(file))) {
+        try (BufferedReader fbr = new BufferedReader(new InputStreamReader(
+                new FileInputStream(file), cs))) {
             List<Integer> tmpList = new ArrayList<>();
+            String line = "";
             try {
-                long curBlockSize = 0; // in bytes
-                while (dataInputStream.available() > 0) {
-                    while (curBlockSize < blockSize) {
-                        int i = dataInputStream.readInt();
-                        tmpList.add(i);
+                while (line != null) {
+                    long currentblocksize = 0;// in bytes
+                    while ((currentblocksize < blockSize)
+                            && ((line = fbr.readLine()) != null)) {
+                        tmpList.add(Integer.parseInt(line));
                         // TODO: 1 int多大合适？据说是4bit，那我直接四倍应该够了？
-                        curBlockSize += 16;
+//                        currentblocksize += Utils.estimatedSizeOf(line);
+                        currentblocksize += 16;
                     }
                     sortAndSave(files, tmpList, tmpDir);
                 }
@@ -72,6 +79,9 @@ public class ExternalSort {
                 if (tmpList.size() > 0) {
                     sortAndSave(files, tmpList, tmpDir);
                 }
+            } finally {
+                tmpList.clear();
+                fbr.close();
             }
         }
         return files;
@@ -154,7 +164,7 @@ public class ExternalSort {
             while (pq.size() > 0) {
                 StreamStack bfb = pq.poll();
                 int r = bfb.pop();
-                fbw.write(r);
+                fbw.write(String.valueOf(r));
                 fbw.newLine();
                 ++rowcounter;
                 if (bfb.empty()) {

@@ -32,6 +32,12 @@ public class BinaryFileBuffer implements StreamStack {
     }
 
     private void reload() throws IOException {
-        this.cache = Integer.parseInt(this.fbr.readLine());
+        String line = this.fbr.readLine();
+        if (line == null) {
+            this.cache = null;
+        } else {
+            this.cache = Integer.parseInt(line);
+        }
+
     }
 }
