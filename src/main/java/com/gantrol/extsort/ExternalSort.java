@@ -33,20 +33,25 @@ public class ExternalSort {
         if (args.length < 2) {
             System.out.println(Utils.usage());
         } else {
-            File tempFileStore = new File("tmp/");
+            File tempFileStore = null;
 
             ExternalSort externalSort = new ExternalSort();
 
             String inputFile = args[0];
             String outputFile = args[1];
-
-            long linesOfNumbers = externalSort.externalSort(new File(inputFile), tempFileStore, new File(outputFile));
+            File out = new File(outputFile);
+            out.createNewFile();
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>START<<<<<<<<<<<<<<<<<<<<<");
+            long linesOfNumbers = externalSort.externalSort(new File(inputFile), tempFileStore, out);
             System.out.println("为" + linesOfNumbers + "行排序");
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>END<<<<<<<<<<<<<<<<<<<<<");
+
         }
     }
 
     public long externalSort(File file, File tmpDir, File outputFile) throws IOException {
         List<File> l = sortInBatch(file, tmpDir);
+        System.out.println("       >>>>>>merge<<<<<<");
         return mergeSortedFiles(l, outputFile, false);
     }
 
@@ -55,6 +60,11 @@ public class ExternalSort {
 
         long dataLength = file.length();
         long availableMemory = Utils.estimateAvailableMemory();
+//        if (tmpDir != null){
+//            tmpDir.mkdir();
+//        }
+
+        System.out.println("       >>>>>>STATE 0<<<<<<");
 
         List<File> files = new ArrayList<>();
         long blockSize = Utils.estimateBestSizeOfBlocks(dataLength, maxTempFiles, availableMemory);
@@ -71,7 +81,7 @@ public class ExternalSort {
                         tmpList.add(Integer.parseInt(line));
                         // TODO: 1 int多大合适？据说是4bit，那我直接四倍应该够了？
 //                        currentblocksize += Utils.estimatedSizeOf(line);
-                        currentblocksize += 16;
+                        currentblocksize += 50;
                     }
                     sortAndSave(files, tmpList, tmpDir);
                 }
@@ -88,6 +98,7 @@ public class ExternalSort {
     }
 
     void sortAndSave(List<File> files, List<Integer> ints, File tmpdirectory) throws IOException {
+        System.out.println("       >>>>>>SORT<<<<<<");
         files.add(save(sort(ints), tmpdirectory));
         ints.clear();
     }
@@ -97,6 +108,7 @@ public class ExternalSort {
     }
 
     File save(List<Integer> ints, File tmpdirectory) throws IOException {
+        System.out.println("       >>>>>>SAVE<<<<<<");
         File newtmpfile = File.createTempFile("sort", ".tmp", tmpdirectory);
         newtmpfile.deleteOnExit();
         OutputStream out = new FileOutputStream(newtmpfile);
@@ -121,7 +133,7 @@ public class ExternalSort {
         return newtmpfile;
     }
 
-    public long mergeSortedFiles(List<File> files, File outputfile, boolean append) throws IOException {
+    public long mergeSortedFiles(List<File> files, File outputFile, boolean append) throws IOException {
 
         ArrayList<StreamStack> bfbs = new ArrayList<>();
         for (File f : files) {
@@ -143,7 +155,7 @@ public class ExternalSort {
             bfbs.add(bfb);
         }
         BufferedWriter fbw = new BufferedWriter(new OutputStreamWriter(
-                new FileOutputStream(outputfile, append), cs));
+                new FileOutputStream(outputFile, append), cs));
         long rowcounter = priority(fbw, bfbs);
         for (File f : files) {
             f.delete();

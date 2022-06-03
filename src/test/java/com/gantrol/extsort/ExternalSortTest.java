@@ -20,6 +20,8 @@ public class ExternalSortTest {
     private static final String TEST_FILE1_TXT = "test-file-1.txt";
     private static final String TEST_FILE1_OUTPUT_TXT = "test-file-1_sorted.txt";
     private static final String TEST_FILE2_TXT = "test-file-2.txt";
+    private static final String TEST_FILE1_2_OUTPUT_TXT = "test-file1-2_sorted.txt";
+    private static final String TEST_FILE1M_TXT = "input.txt";
 
     private static final Integer[] EXPECTED_SORT_RESULTS = {
             -2147483648, -954384567, -15684528, -8745645, -50,
@@ -35,6 +37,8 @@ public class ExternalSortTest {
 
     private File file1;
     private File file2;
+    private File file12;
+    private File file1M;
     private List<File> fileList;
 
     private static void copyFile(File sourceFile, File destFile) throws IOException {
@@ -54,10 +58,10 @@ public class ExternalSortTest {
     @Before
     public void setUp() throws Exception {
         this.fileList = new ArrayList<>(2);
-        this.file1 = new File(this.getClass().getClassLoader()
-                .getResource(TEST_FILE1_TXT).toURI());
-        this.file2 = new File(this.getClass().getClassLoader()
-                .getResource(TEST_FILE2_TXT).toURI());
+        this.file1 = new File(this.getClass().getClassLoader().getResource(TEST_FILE1_TXT).toURI());
+        this.file2 = new File(this.getClass().getClassLoader().getResource(TEST_FILE2_TXT).toURI());
+        this.file12 = new File(this.getClass().getClassLoader().getResource(TEST_FILE1_2_OUTPUT_TXT).toURI());
+        this.file1M = new File(this.getClass().getClassLoader().getResource(TEST_FILE1M_TXT).toURI());
 
         File tmpFile1 = new File(this.file1.getPath() + ".tmp");
         File tmpFile2 = new File(this.file2.getPath() + ".tmp");
@@ -65,6 +69,7 @@ public class ExternalSortTest {
         copyFile(this.file1, tmpFile1);
         copyFile(this.file2, tmpFile2);
         this.fileList.add(tmpFile1);
+        this.fileList.add(tmpFile2);
     }
 
     @After
@@ -150,7 +155,39 @@ public class ExternalSortTest {
         return true;
     }
 
-    // TODO: test merge file1 and file2
+    @Test
+    public void testMergeSortedFile() throws IOException {
+        ExternalSort externalSort = new ExternalSort();
+        externalSort.useGzip = false;
+        File sortedFile1 = new File("file1.sorted.txt");
+        File sortedFile2 = new File("file2.sorted.txt");
+        externalSort.externalSort(fileList.get(0), null, sortedFile1);
+        externalSort.externalSort(fileList.get(1), null, sortedFile2);
+        List<File> files = new ArrayList<>();
+        files.add(sortedFile1);
+        files.add(sortedFile2);
+        externalSort.mergeSortedFiles(files, file12, false);
+        assertTrue(isFileSorted(file12));
+    }
 
-    // TODO: large file and test result order
+//    // TODO: large file and test result order
+    @Test
+    public void testMain() throws Exception {
+        String s = file1M.toPath().toAbsolutePath().toString();
+        ExternalSort.main(new String[]{s, "output.txt"});
+    }
+
+//    @Test
+//    public void testMain1G() throws Exception {
+//        String s = "C:\\Users\\50196\\Documents\\extsort\\java-external-sorting-master\\data\\input1G.txt";
+//        ExternalSort.main(new String[]{s, "output.txt"}); // check that it does not crash
+//    }
+
+//  22min，有待提升
+//    @Test
+//    public void testMain8G() throws Exception {
+//        String s = "C:\\Users\\50196\\Documents\\extsort\\java-external-sorting-master\\data\\input.txt";
+//        ExternalSort.main(new String[]{s, "output.txt"}); // check that it does not crash
+//    }
+
 }
