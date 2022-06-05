@@ -171,11 +171,11 @@ public class ExternalSortTest {
     }
 
 //    // TODO: large file and test result order
-    @Test
-    public void testMain() throws Exception {
-        String s = file1M.toPath().toAbsolutePath().toString();
-        ExternalSort.main(new String[]{s, "output.txt"});
-    }
+//    @Test
+//    public void testMain() throws Exception {
+//        String s = file1M.toPath().toAbsolutePath().toString();
+//        ExternalSort.main(new String[]{s, "output.txt"});
+//    }
 
 //    @Test
 //    public void testMain1G() throws Exception {
